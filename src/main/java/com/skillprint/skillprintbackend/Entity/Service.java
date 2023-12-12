@@ -21,10 +21,6 @@ public class Service {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idService;
 
-    // Comentado para añadir relación con Empleado más tarde
-    // @Column(name = "ID_Empleado", nullable = false)
-    // private Long idEmpleado;
-
     @Column(nullable = false, length = 100)
     private String serviceTitle;
 

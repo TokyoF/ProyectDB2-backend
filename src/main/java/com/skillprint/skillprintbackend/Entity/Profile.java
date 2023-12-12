@@ -6,14 +6,20 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class Profile {
+
+    public Profile(ProfileType profileType, String privilegesDescription) {
+        this.profileType = profileType;
+        this.privilegesDescription = privilegesDescription;
+    }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,7 +35,7 @@ public class Profile {
     private String privilegesDescription;
 
     @ManyToMany(mappedBy = "profiles")
-    private Set<Employed> employees;
+    private Set<Employed> employees = new HashSet<>();
 
 
 }

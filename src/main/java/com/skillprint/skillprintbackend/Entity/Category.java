@@ -16,6 +16,12 @@ import java.util.Set;
 @Builder
 public class Category {
 
+    public Category(String categoryName, Double baseSalary, Double annualIncrease) {
+        this.categoryName = categoryName;
+        this.baseSalary = baseSalary;
+        this.annualIncrease = annualIncrease;
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idCategory;

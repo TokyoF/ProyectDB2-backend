@@ -72,7 +72,7 @@ public class Employed {
         @OneToMany(mappedBy = "employed")
         private Set<Service> services;
 
-        @ManyToMany
+        @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
         @JoinTable(
                 name = "Employed_Profile",
                 joinColumns = @JoinColumn(name = "idEmployed"),

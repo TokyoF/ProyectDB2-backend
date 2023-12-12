@@ -1,12 +1,14 @@
-package com.example.SpringSecurity.Security;
+package com.skillprint.skillprintbackend.Security;
 
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.skillprint.skillprintbackend.Security.Filters.JwtAuthenticationFilter;
+import com.skillprint.skillprintbackend.Security.Filters.JwtAuthorizationFilter;
+import com.skillprint.skillprintbackend.Security.Jwt.JwtUtils;
+import com.skillprint.skillprintbackend.Service.UserDetailsServiceImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -17,48 +19,71 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
-@EnableGlobalMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
-    @Autowired
-    private JwtUtils jwtUtils;
 
-    @Autowired
-    private UserDetailsServiceImpl userDetailsService;
+    private final JwtUtils jwtUtils;
 
-    @Autowired
-    private JwtAuthorizationFilter authorizationFilter;
+    private  final UserDetailsServiceImpl userDetailsService;
+
+    private  final JwtAuthorizationFilter authorizationFilter;
+
+    public SecurityConfig(JwtUtils jwtUtils, UserDetailsServiceImpl userDetailsService, JwtAuthorizationFilter authorizationFilter) {
+        this.jwtUtils = jwtUtils;
+        this.userDetailsService = userDetailsService;
+        this.authorizationFilter = authorizationFilter;
+    }
+
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity, AuthenticationManager authenticationManager) throws Exception{ //filtros de seguridad
+
         JwtAuthenticationFilter jwtAuthenticationFilter = new JwtAuthenticationFilter(jwtUtils);
-        jwtAuthenticationFilter.setAuthenticationManager(authenticationManager(http));
+        jwtAuthenticationFilter.setAuthenticationManager(authenticationManager);
         jwtAuthenticationFilter.setFilterProcessesUrl("/login");
 
-        http.csrf(customizer.withDefaults())
-                .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/v1/hello").permitAll()
-                        .anyRequest().authenticated()
-                )
-                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                .and()
-                .addFilter(jwtAuthenticationFilter)
-                .addFilterBefore(authorizationFilter, UsernamePasswordAuthenticationFilter.class);
+        return httpSecurity
+                .csrf(config -> config.disable())
+                .authorizeHttpRequests( auth -> {
+                    auth.requestMatchers("/api/employed/register").permitAll();
+                    auth.anyRequest().authenticated();
+                })
+                .sessionManagement(session -> {
+                    session.sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+                })
+                .addFilter(jwtAuthenticationFilter)      //.httpBasic()
+                .addFilterBefore(authorizationFilter, UsernamePasswordAuthenticationFilter.class)
+                .build();                               //.and()
 
-        return http.build();
     }
+
+/*    @Bean
+    UserDetailsService userDetailsService(){
+
+        InMemoryUserDetailsManager manager = new InMemoryUserDetailsManager();
+
+        manager.createUser(User.withUsername("Santiago")
+                .password("1234")
+                .roles()
+                .build()
+        );
+        return manager;
+    } */
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+    PasswordEncoder passwordEncoder(){
+
+        return new BCryptPasswordEncoder(); //NoOpPasswordEncoder.getInstance();
     }
+
 
     @Bean
     public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
-        return http.getSharedObject(AuthenticationManagerBuilder.class)
-                .userDetailsService(userDetailsService)
-                .passwordEncoder(passwordEncoder())
-                .and()
-                .build();
+        AuthenticationManagerBuilder authenticationManagerBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
+        authenticationManagerBuilder.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
+        return authenticationManagerBuilder.build();
     }
+
+
+
 }
